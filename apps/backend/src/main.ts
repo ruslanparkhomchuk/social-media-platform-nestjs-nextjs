@@ -8,12 +8,19 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
+
+  if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 2);
+  }
+
   app.setGlobalPrefix("api");
   app.getHttpAdapter().get("/", (req, res: Response) => res.send("ok"));
+
   const uploadsPath = join(__dirname, "../../uploads");
   app.useStaticAssets(uploadsPath, {
     prefix: "/uploads/",
   });
+
   await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();

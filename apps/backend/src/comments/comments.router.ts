@@ -19,9 +19,10 @@ import {
 } from "@repo/trpc/schemas";
 import { AppContext } from "../app-context.interface";
 import z from "zod";
+import { RateLimitTrpcMiddleware } from "src/trpc/rate-limit.middleware";
 
 @Router()
-@UseMiddlewares(AuthTrpcMiddleware)
+@UseMiddlewares(AuthTrpcMiddleware, RateLimitTrpcMiddleware)
 export class CommentsRouter {
   constructor(private readonly commentsService: CommentsService) {}
 

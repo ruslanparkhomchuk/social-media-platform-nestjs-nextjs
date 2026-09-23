@@ -7,6 +7,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { DATABASE_CONNECTION } from "./database/database-connection";
 import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AppController } from "./app.controller";
 import { PostsModule } from "./posts/posts.module";
 import { TRPCModule } from "nestjs-trpc-v2";
@@ -14,6 +15,7 @@ import { UsersModule } from "./auth/users/users.module";
 import { UploadModule } from "./upload/upload.module";
 import { AppContext } from "./app.context";
 import { AuthTrpcMiddleware } from "./auth/auth-trpc.middleware";
+import { RateLimitTrpcMiddleware } from "./trpc/rate-limit.middleware";
 import { CommentsModule } from "./comments/comments.module";
 import { StoriesModule } from "./stories/stories.module";
 
@@ -21,6 +23,9 @@ import { StoriesModule } from "./stories/stories.module";
   imports: [
     ConfigModule.forRoot(),
     DatabaseModule,
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: "default", ttl: 60_000, limit: 100 }],
+    }),
     TRPCModule.forRoot({
       autoSchemaFile:
         process.env.NODE_ENV !== "production"
@@ -42,6 +47,15 @@ import { StoriesModule } from "./stories/stories.module";
           trustedOrigins: configService.get("UI_URL")
             ? [configService.get("UI_URL")!]
             : undefined,
+          rateLimit: {
+            enabled: true,
+            window: 60,
+            max: 100,
+            customRules: {
+              "/sign-in/email": { window: 60, max: 5 },
+              "/sign-up/email": { window: 60, max: 3 },
+            },
+          },
         }),
       }),
       inject: [DATABASE_CONNECTION, ConfigService],
@@ -55,7 +69,12 @@ import { StoriesModule } from "./stories/stories.module";
   controllers: [AppController],
   providers: [
     AuthTrpcMiddleware,
+    RateLimitTrpcMiddleware,
     AppContext,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

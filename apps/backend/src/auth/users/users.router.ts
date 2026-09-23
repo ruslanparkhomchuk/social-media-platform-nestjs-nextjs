@@ -17,9 +17,10 @@ import { AuthTrpcMiddleware } from "../auth-trpc.middleware";
 import { AppContext } from "../../app-context.interface";
 import { UsersService } from "./users.service";
 import z from "zod";
+import { RateLimitTrpcMiddleware } from "src/trpc/rate-limit.middleware";
 
 @Router()
-@UseMiddlewares(AuthTrpcMiddleware)
+@UseMiddlewares(AuthTrpcMiddleware, RateLimitTrpcMiddleware)
 export class UsersRouter {
   constructor(private readonly usersService: UsersService) {}
 

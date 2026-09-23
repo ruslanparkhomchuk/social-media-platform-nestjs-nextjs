@@ -11,12 +11,14 @@ import {
   FileTypeValidationPipe,
 } from "./file-validation.pipe";
 import { multerConfig } from "./upload.config";
+import { Throttle } from "@nestjs/throttler";
 
 @Controller("upload")
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post("image")
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UseInterceptors(FileInterceptor("image", multerConfig))
   async uploadFile(
     @UploadedFile(new FileSizeValidationPipe(), new FileTypeValidationPipe())

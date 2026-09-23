@@ -1,38 +1,37 @@
 import { AuthService } from "@thallesp/nestjs-better-auth";
 import { Injectable } from "@nestjs/common";
+import { TRPCError } from "@trpc/server";
+import { fromNodeHeaders } from "better-auth/node";
 import {
   MiddlewareOptions,
   MiddlewareResponse,
   TRPCMiddleware,
 } from "nestjs-trpc-v2";
+import type { Request, Response } from "express";
+
+type AuthCtx = { req: Request; res: Response };
 
 @Injectable()
 export class AuthTrpcMiddleware implements TRPCMiddleware {
   constructor(private readonly authService: AuthService) {}
 
-  async use(
-    opts: MiddlewareOptions<{ req: any; res: any }>,
-  ): Promise<MiddlewareResponse> {
+  async use(opts: MiddlewareOptions<AuthCtx>): Promise<MiddlewareResponse> {
     const { ctx, next } = opts;
 
-    try {
-      const session = await this.authService.api.getSession({
-        headers: ctx.req.headers,
-      });
+    const session = await this.authService.api.getSession({
+      headers: fromNodeHeaders(ctx.req.headers),
+    });
 
-      if (session?.user && session.session) {
-        return next({
-          ctx: {
-            ...ctx,
-            user: session.user,
-            session: session.session,
-          },
-        });
-      }
-
-      throw new Error("Unauthorized");
-    } catch (error) {
-      throw new Error("Unauthorized");
+    if (!session?.user || !session.session) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
     }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: session.user,
+        session: session.session,
+      },
+    });
   }
 }

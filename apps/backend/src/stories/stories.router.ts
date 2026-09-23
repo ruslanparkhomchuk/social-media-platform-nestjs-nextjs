@@ -15,9 +15,10 @@ import { AuthTrpcMiddleware } from "../auth/auth-trpc.middleware";
 import { AppContext } from "../app-context.interface";
 import { StoriesService } from "./stories.service";
 import z from "zod";
+import { RateLimitTrpcMiddleware } from "src/trpc/rate-limit.middleware";
 
 @Router()
-@UseMiddlewares(AuthTrpcMiddleware)
+@UseMiddlewares(AuthTrpcMiddleware, RateLimitTrpcMiddleware)
 export class StoriesRouter {
   constructor(private readonly storiesService: StoriesService) {}
 

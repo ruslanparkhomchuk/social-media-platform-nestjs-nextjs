@@ -21,9 +21,10 @@ import { PostsService } from "./posts.service";
 import z from "zod";
 import { AuthTrpcMiddleware } from "../auth/auth-trpc.middleware";
 import { AppContext } from "../app-context.interface";
+import { RateLimitTrpcMiddleware } from "src/trpc/rate-limit.middleware";
 
 @Router()
-@UseMiddlewares(AuthTrpcMiddleware)
+@UseMiddlewares(AuthTrpcMiddleware, RateLimitTrpcMiddleware)
 export class PostsRouter {
   constructor(private readonly postsService: PostsService) {}
 
